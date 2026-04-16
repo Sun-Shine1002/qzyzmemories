@@ -109,15 +109,28 @@ const loadComments = async () => {
   commentsError.value = ''
 
   try {
-    const { data, error } = await supabase
+    const { data: commentsData, error } = await supabase
       .from('comments')
-      .select('*, username:user_profiles(username)')
+      .select('*')
       .eq('graduation_year', year)
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
-    comments.value = data || []
+    // 获取用户信息
+    const userIds = commentsData.map(c => c.user_id)
+    const { data: profilesData } = await supabase
+      .from('user_profiles')
+      .select('user_id, username')
+      .in('user_id', userIds)
+
+    const profileMap = {}
+    profilesData?.forEach(p => { profileMap[p.user_id] = p.username })
+
+    comments.value = commentsData.map(c => ({
+      ...c,
+      username: profileMap[c.user_id] || '未知用户'
+    }))
   } catch (err) {
     commentsError.value = err.message || '加载失败'
   } finally {
