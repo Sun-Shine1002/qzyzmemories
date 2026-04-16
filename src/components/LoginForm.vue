@@ -50,6 +50,9 @@
 <script setup>
 import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 // 状态变量
 const email = ref('')
 const password = ref('')
@@ -95,12 +98,9 @@ const handleSubmit = async () => {
 
       successMsg.value = '登录成功！正在跳转...'
 
-      // 登录成功后的操作，比如跳转到同学录主页
       setTimeout(() => {
-        // 这里可以换成你的路由跳转
-        // router.push('/dashboard')
-        console.log('登录用户:', data?.user)
-        successMsg.value = `欢迎回来，${data?.user?.email || '用户'}`
+        localStorage.setItem('user', JSON.stringify(data.user))
+        router.push('/dashboard')
       }, 1000)
 
     } else {
