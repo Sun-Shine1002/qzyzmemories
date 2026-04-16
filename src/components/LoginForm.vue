@@ -138,6 +138,7 @@ html, body {
 
 .login-container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -150,24 +151,25 @@ html, body {
   max-width: 420px;
   padding: 40px;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
 }
 
 h2 {
-  margin: 0 0 30px;
+  margin: 0 0 35px;
   text-align: center;
   color: #333;
-  font-size: 26px;
+  font-size: 28px;
+  letter-spacing: 2px;
 }
 
 .input-group {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .input-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   color: #555;
   font-size: 14px;
   font-weight: 500;
@@ -175,9 +177,9 @@ h2 {
 
 .input-group input {
   width: 100%;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border: 2px solid #eee;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 16px;
   transition: border-color 0.3s;
 }
@@ -189,29 +191,33 @@ h2 {
 
 .submit-btn {
   width: 100%;
-  padding: 16px;
+  padding: 18px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 12px;
+  font-size: 17px;
   font-weight: bold;
   cursor: pointer;
-  transition: opacity 0.3s;
-  margin-top: 10px;
+  transition: all 0.3s;
+  margin-top: 15px;
+  letter-spacing: 2px;
 }
 
 .submit-btn:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
 .submit-btn:disabled {
   background: #ccc;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .toggle-text {
-  margin-top: 25px;
+  margin-top: 30px;
   text-align: center;
   color: #666;
   font-size: 14px;
@@ -228,21 +234,21 @@ h2 {
 }
 
 .error-msg {
-  margin-top: 20px;
-  padding: 14px;
-  background: #fee;
-  border-radius: 10px;
-  color: #c33;
+  margin-top: 25px;
+  padding: 16px;
+  background: #ffebee;
+  border-radius: 12px;
+  color: #c62828;
   font-size: 14px;
   text-align: center;
 }
 
 .success-msg {
-  margin-top: 20px;
-  padding: 14px;
-  background: #efe;
-  border-radius: 10px;
-  color: #3a3;
+  margin-top: 25px;
+  padding: 16px;
+  background: #e8f5e9;
+  border-radius: 12px;
+  color: #2e7d32;
   font-size: 14px;
   text-align: center;
 }
@@ -254,8 +260,8 @@ h2 {
   }
 
   h2 {
-    font-size: 22px;
-    margin-bottom: 25px;
+    font-size: 24px;
+    margin-bottom: 30px;
   }
 
   .input-group {
@@ -263,13 +269,13 @@ h2 {
   }
 
   .input-group input {
-    padding: 12px 14px;
+    padding: 14px 16px;
     font-size: 15px;
   }
 
   .submit-btn {
-    padding: 14px;
-    font-size: 15px;
+    padding: 16px;
+    font-size: 16px;
   }
 }
 </style>

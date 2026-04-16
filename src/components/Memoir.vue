@@ -52,17 +52,34 @@
       <div v-if="showCommentForm" class="comment-form-expanded">
         <textarea
           v-model="newPost.content"
-          placeholder="写下你的回忆..."
+          :placeholder="chapters[activeChapter - 1]?.placeholder"
           rows="4"
         ></textarea>
-        <input
-          v-model="newPost.imageUrl"
-          type="text"
-          placeholder="图片地址（可选）"
-          class="image-input"
-        />
+
+        <!-- 图片上传 -->
+        <div class="upload-section">
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/*"
+            @change="handleFileSelect"
+            style="display: none"
+          />
+          <button v-if="!uploadingImage && !newPost.imageUrl" @click="triggerFileInput" class="upload-btn">
+            📷 上传照片
+          </button>
+          <div v-if="uploadingImage" class="uploading">
+            <span class="spinner"></span>
+            上传中...
+          </div>
+          <div v-if="newPost.imageUrl" class="image-preview">
+            <img :src="newPost.imageUrl" alt="预览" />
+            <button @click="removeImage" class="remove-btn">×</button>
+          </div>
+        </div>
+
         <div class="form-actions">
-          <button @click="submitPost" :disabled="submitting" class="submit-btn">
+          <button @click="submitPost" :disabled="submitting || uploadingImage" class="submit-btn">
             {{ submitting ? '发布中...' : '发布' }}
           </button>
           <button @click="showCommentForm = false" class="cancel-btn">收起</button>
@@ -74,7 +91,7 @@
     <button
       v-if="!showCommentForm"
       class="fab"
-      @click="showCommentForm = true"
+      @click="handleFabClick"
     >
       +
     </button>
@@ -92,8 +109,11 @@ const router = useRouter()
 const year = route.params.year || '2025'
 const user = ref(null)
 const username = ref('')
+const userGraduationYear = ref(null)
 const activeChapter = ref(1)
 const showCommentForm = ref(false)
+const fileInput = ref(null)
+const uploadingImage = ref(false)
 
 const chapters = [
   { id: 1, title: '第一章', placeholder: '你们现在在哪个城市？' },
@@ -119,6 +139,55 @@ const submitting = ref(false)
 const loadingPosts = ref(false)
 const postsError = ref('')
 const posts = ref([])
+
+const handleFabClick = () => {
+  // 检查用户毕业年份是否匹配
+  if (userGraduationYear.value && userGraduationYear.value !== year) {
+    alert(`你选择了 ${userGraduationYear.value}届，只能在 ${userGraduationYear.value}回忆录中评论`)
+    return
+  }
+  showCommentForm.value = true
+}
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleFileSelect = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  uploadingImage.value = true
+
+  try {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+    const filePath = `posts/${user.value.id}/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('photos')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (uploadError) throw uploadError
+
+    const { data } = supabase.storage.from('photos').getPublicUrl(filePath)
+    newPost.value.imageUrl = data.publicUrl
+  } catch (err) {
+    alert('上传失败：' + (err.message || '请检查网络或重新尝试'))
+  } finally {
+    uploadingImage.value = false
+  }
+}
+
+const removeImage = () => {
+  newPost.value.imageUrl = ''
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
 
 const selectChapter = async (chapterId) => {
   activeChapter.value = chapterId
@@ -163,7 +232,16 @@ const loadPosts = async () => {
 }
 
 const submitPost = async () => {
-  if (!newPost.value.content.trim() && !newPost.value.imageUrl.trim()) return
+  // 检查用户毕业年份
+  if (userGraduationYear.value && userGraduationYear.value !== year) {
+    alert(`你选择了 ${userGraduationYear.value}届，只能在 ${userGraduationYear.value}回忆录中评论`)
+    return
+  }
+
+  if (!newPost.value.content.trim() && !newPost.value.imageUrl) {
+    alert('请输入内容或上传图片')
+    return
+  }
 
   submitting.value = true
 
@@ -176,7 +254,7 @@ const submitPost = async () => {
           graduation_year: year,
           chapter: activeChapter.value,
           content: newPost.value.content.trim() || null,
-          image_url: newPost.value.imageUrl.trim() || null
+          image_url: newPost.value.imageUrl || null
         }
       ])
 
@@ -184,6 +262,7 @@ const submitPost = async () => {
 
     newPost.value.content = ''
     newPost.value.imageUrl = ''
+    if (fileInput.value) fileInput.value.value = ''
     showCommentForm.value = false
     await loadPosts()
   } catch (err) {
@@ -207,12 +286,15 @@ onMounted(async () => {
 
     const { data } = await supabase
       .from('user_profiles')
-      .select('username')
+      .select('username, graduation_year')
       .eq('user_id', user.value.id)
       .single()
 
     if (data?.username) {
       username.value = data.username
+    }
+    if (data?.graduation_year) {
+      userGraduationYear.value = data.graduation_year
     }
 
     await loadPosts()
@@ -229,6 +311,7 @@ onMounted(async () => {
 
 .memoir-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   flex-direction: column;
@@ -259,7 +342,7 @@ onMounted(async () => {
 .header h1 {
   color: white;
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   letter-spacing: 2px;
 }
 
@@ -273,7 +356,7 @@ onMounted(async () => {
 
 .main-content {
   flex: 1;
-  padding: 20px;
+  padding: 15px;
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
@@ -284,19 +367,19 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   background: rgba(255, 255, 255, 0.95);
-  padding: 15px;
+  padding: 12px;
   border-radius: 16px;
 }
 
 .chapters-nav button {
-  padding: 10px 16px;
-  background: #f5f5f5;
+  padding: 8px 14px;
+  background: #f0f0f0;
   color: #555;
   border: none;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -308,34 +391,35 @@ onMounted(async () => {
 
 .chapter-header {
   background: white;
-  padding: 20px;
+  padding: 16px;
   border-radius: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   text-align: center;
 }
 
 .chapter-header h2 {
   margin: 0;
   color: #333;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
 }
 
 .posts-section {
   background: white;
   border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 16px;
+  margin-bottom: 15px;
 }
 
 .loading, .error-msg, .empty-msg {
   text-align: center;
   padding: 40px 20px;
   color: #666;
+  font-size: 14px;
 }
 
 .sub-text {
-  font-size: 14px;
+  font-size: 13px;
   color: #999;
   margin-top: 8px;
 }
@@ -360,12 +444,12 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .post-author {
   color: #333;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -377,8 +461,8 @@ onMounted(async () => {
 .post-content {
   color: #444;
   line-height: 1.7;
-  font-size: 15px;
-  margin-bottom: 12px;
+  font-size: 14px;
+  margin-bottom: 10px;
 }
 
 .post-image img {
@@ -395,29 +479,94 @@ onMounted(async () => {
   right: 0;
   background: white;
   padding: 20px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.2);
   border-radius: 20px 20px 0 0;
   max-width: 800px;
   margin: 0 auto;
   z-index: 200;
 }
 
-.comment-form-expanded textarea,
-.comment-form-expanded .image-input {
+.comment-form-expanded textarea {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border: 2px solid #eee;
   border-radius: 12px;
-  font-size: 15px;
+  font-size: 14px;
   font-family: inherit;
   resize: vertical;
   margin-bottom: 12px;
 }
 
-.comment-form-expanded textarea:focus,
-.comment-form-expanded .image-input:focus {
+.comment-form-expanded textarea:focus {
   outline: none;
   border-color: #667eea;
+}
+
+.upload-section {
+  margin-bottom: 12px;
+}
+
+.upload-btn {
+  padding: 10px 20px;
+  background: #f5f5f5;
+  color: #666;
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.uploading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  color: #666;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ddd;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.image-preview {
+  position: relative;
+  display: inline-block;
+}
+
+.image-preview img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.remove-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 24px;
 }
 
 .form-actions {
@@ -427,11 +576,11 @@ onMounted(async () => {
 }
 
 .submit-btn {
-  padding: 10px 24px;
+  padding: 12px 28px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -441,11 +590,11 @@ onMounted(async () => {
 }
 
 .cancel-btn {
-  padding: 10px 20px;
+  padding: 12px 20px;
   background: #f5f5f5;
   color: #666;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -462,7 +611,7 @@ onMounted(async () => {
   border-radius: 50%;
   font-size: 32px;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -477,43 +626,37 @@ onMounted(async () => {
 
   .header h1 {
     font-size: 16px;
-    letter-spacing: 1px;
-  }
-
-  .back-btn {
-    padding: 6px 12px;
-    font-size: 13px;
   }
 
   .main-content {
-    padding: 15px;
+    padding: 12px;
     padding-bottom: 80px;
   }
 
   .chapters-nav {
-    padding: 12px;
+    padding: 10px;
     gap: 6px;
   }
 
   .chapters-nav button {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 7px 11px;
+    font-size: 11px;
   }
 
   .chapter-header {
-    padding: 15px;
+    padding: 12px;
   }
 
   .chapter-header h2 {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .posts-section {
-    padding: 15px;
+    padding: 12px;
   }
 
   .post-content {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .fab {
