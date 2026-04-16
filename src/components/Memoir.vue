@@ -4,13 +4,12 @@
       <button class="back-btn" @click="router.push('/dashboard')">← 返回</button>
       <h1>{{ year }}回忆录</h1>
       <div class="user-mini">
-        <div class="user-avatar">{{ displayName }}</div>
         <span class="user-name">{{ username?.charAt(0) || '?' }}**</span>
       </div>
     </header>
 
     <main class="main-content">
-      <!-- 章节选择 -->
+      <!-- 章节导航 -->
       <div class="chapters-nav">
         <button
           v-for="chapter in chapters"
@@ -22,59 +21,68 @@
         </button>
       </div>
 
-      <!-- 发帖区域 -->
-      <div class="post-form">
-        <div class="post-user">
-          <div class="post-avatar">{{ displayName }}</div>
-        </div>
-        <div class="post-input-area">
-          <textarea
-            v-model="newPost.content"
-            :placeholder="chapters[activeChapter - 1]?.placeholder"
-            rows="4"
-          ></textarea>
-          <input
-            v-model="newPost.imageUrl"
-            type="text"
-            placeholder="图片地址（可选）"
-            class="image-input"
-          />
-          <div class="post-actions">
-            <button @click="submitPost" :disabled="submitting" class="submit-btn">
-              {{ submitting ? '发布中...' : '发布' }}
-            </button>
-          </div>
-        </div>
+      <!-- 当前章节标题 -->
+      <div class="chapter-header">
+        <h2>{{ chapters[activeChapter - 1]?.placeholder }}</h2>
       </div>
 
-      <!-- 帖子列表 -->
-      <div v-if="loadingPosts" class="loading">加载中...</div>
-      <div v-else-if="postsError" class="error-msg">{{ postsError }}</div>
-      <div v-else-if="posts.length === 0" class="empty-msg">
-        <p>暂无回忆</p>
-        <p class="sub-text">成为第一个分享的人吧！</p>
-      </div>
-      <div v-else class="posts-list">
-        <div v-for="post in posts" :key="post.id" class="post-card">
-          <div class="post-header">
-            <div class="post-avatar">{{ post.displayName }}</div>
+      <!-- 评论列表 -->
+      <div class="posts-section">
+        <div v-if="loadingPosts" class="loading">加载中...</div>
+        <div v-else-if="postsError" class="error-msg">{{ postsError }}</div>
+        <div v-else-if="posts.length === 0" class="empty-msg">
+          <p>暂无回忆</p>
+          <p class="sub-text">成为第一个分享的人吧！</p>
+        </div>
+        <div v-else class="posts-list">
+          <div v-for="post in posts" :key="post.id" class="post-card">
             <div class="post-meta">
               <span class="post-author">{{ post.displayName }}</span>
               <span class="post-time">{{ formatTime(post.created_at) }}</span>
             </div>
-          </div>
-          <div v-if="post.content" class="post-content">{{ post.content }}</div>
-          <div v-if="post.image_url" class="post-image">
-            <img :src="post.image_url" :alt="post.content || '图片'" />
+            <div v-if="post.content" class="post-content">{{ post.content }}</div>
+            <div v-if="post.image_url" class="post-image">
+              <img :src="post.image_url" :alt="post.content || '图片'" />
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- 展开的评论表单 -->
+      <div v-if="showCommentForm" class="comment-form-expanded">
+        <textarea
+          v-model="newPost.content"
+          placeholder="写下你的回忆..."
+          rows="4"
+        ></textarea>
+        <input
+          v-model="newPost.imageUrl"
+          type="text"
+          placeholder="图片地址（可选）"
+          class="image-input"
+        />
+        <div class="form-actions">
+          <button @click="submitPost" :disabled="submitting" class="submit-btn">
+            {{ submitting ? '发布中...' : '发布' }}
+          </button>
+          <button @click="showCommentForm = false" class="cancel-btn">收起</button>
+        </div>
+      </div>
     </main>
+
+    <!-- 悬浮添加按钮 -->
+    <button
+      v-if="!showCommentForm"
+      class="fab"
+      @click="showCommentForm = true"
+    >
+      +
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
@@ -85,6 +93,7 @@ const year = route.params.year || '2025'
 const user = ref(null)
 const username = ref('')
 const activeChapter = ref(1)
+const showCommentForm = ref(false)
 
 const chapters = [
   { id: 1, title: '第一章', placeholder: '你们现在在哪个城市？' },
@@ -111,13 +120,9 @@ const loadingPosts = ref(false)
 const postsError = ref('')
 const posts = ref([])
 
-const displayName = computed(() => {
-  if (!username.value) return '?'
-  return username.value.charAt(0) + '**'
-})
-
 const selectChapter = async (chapterId) => {
   activeChapter.value = chapterId
+  showCommentForm.value = false
   await loadPosts()
 }
 
@@ -179,6 +184,7 @@ const submitPost = async () => {
 
     newPost.value.content = ''
     newPost.value.imageUrl = ''
+    showCommentForm.value = false
     await loadPosts()
   } catch (err) {
     alert(err.message || '发布失败')
@@ -217,6 +223,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
 .memoir-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -228,84 +238,65 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 60px;
+  padding: 15px 20px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(15px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .back-btn {
-  padding: 12px 24px;
+  padding: 8px 16px;
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s;
-}
-
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
 }
 
 .header h1 {
   color: white;
   margin: 0;
-  font-size: 28px;
-  letter-spacing: 4px;
-}
-
-.user-mini {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.user-avatar,
-.post-avatar {
-  width: 45px;
-  height: 45px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 20px;
+  letter-spacing: 2px;
 }
 
 .user-name {
   color: white;
-  font-size: 16px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6px 12px;
+  border-radius: 15px;
 }
 
 .main-content {
   flex: 1;
-  padding: 40px 80px;
-  max-width: 1400px;
+  padding: 20px;
+  max-width: 800px;
   margin: 0 auto;
   width: 100%;
-  box-sizing: border-box;
+  padding-bottom: 80px;
 }
 
 .chapters-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 30px;
+  gap: 8px;
+  margin-bottom: 20px;
   background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 20px;
+  padding: 15px;
+  border-radius: 16px;
 }
 
 .chapters-nav button {
-  padding: 14px 24px;
-  background: #f0f0f0;
+  padding: 10px 16px;
+  background: #f5f5f5;
   color: #555;
   border: none;
-  border-radius: 25px;
-  font-size: 15px;
+  border-radius: 20px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -315,78 +306,38 @@ onMounted(async () => {
   color: white;
 }
 
-.post-form {
-  display: flex;
-  gap: 20px;
+.chapter-header {
   background: white;
-  padding: 25px;
-  border-radius: 20px;
-  margin-bottom: 30px;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-.post-user {
-  flex-shrink: 0;
+.chapter-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 500;
 }
 
-.post-input-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.post-input-area textarea,
-.image-input {
-  width: 100%;
-  padding: 15px;
-  border: 2px solid #eee;
-  border-radius: 12px;
-  font-size: 16px;
-  font-family: inherit;
-  resize: vertical;
-  box-sizing: border-box;
-  transition: border-color 0.3s;
-}
-
-.post-input-area textarea:focus,
-.image-input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.post-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.submit-btn {
-  padding: 14px 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: opacity 0.3s;
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
+.posts-section {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
 .loading, .error-msg, .empty-msg {
   text-align: center;
-  padding: 60px;
-  background: white;
-  border-radius: 20px;
+  padding: 40px 20px;
   color: #666;
-  font-size: 18px;
 }
 
 .sub-text {
-  font-size: 15px;
+  font-size: 14px;
   color: #999;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .posts-list {
@@ -396,45 +347,185 @@ onMounted(async () => {
 }
 
 .post-card {
-  background: white;
-  padding: 25px;
-  border-radius: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
 }
 
-.post-header {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
+.post-card:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .post-meta {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .post-author {
   color: #333;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
 }
 
 .post-time {
   color: #999;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .post-content {
   color: #444;
-  line-height: 1.8;
-  margin-bottom: 15px;
-  font-size: 16px;
+  line-height: 1.7;
+  font-size: 15px;
+  margin-bottom: 12px;
 }
 
 .post-image img {
   width: 100%;
-  max-height: 500px;
+  max-height: 400px;
   object-fit: cover;
   border-radius: 12px;
+}
+
+.comment-form-expanded {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 20px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 20px 20px 0 0;
+  max-width: 800px;
+  margin: 0 auto;
+  z-index: 200;
+}
+
+.comment-form-expanded textarea,
+.comment-form-expanded .image-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.comment-form-expanded textarea:focus,
+.comment-form-expanded .image-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.submit-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.fab {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 32px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 手机适配 */
+@media (max-width: 600px) {
+  .header {
+    padding: 12px 15px;
+  }
+
+  .header h1 {
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+
+  .back-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .main-content {
+    padding: 15px;
+    padding-bottom: 80px;
+  }
+
+  .chapters-nav {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .chapters-nav button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .chapter-header {
+    padding: 15px;
+  }
+
+  .chapter-header h2 {
+    font-size: 15px;
+  }
+
+  .posts-section {
+    padding: 15px;
+  }
+
+  .post-content {
+    font-size: 14px;
+  }
+
+  .fab {
+    bottom: 15px;
+    left: 15px;
+    width: 50px;
+    height: 50px;
+    font-size: 28px;
+  }
+
+  .comment-form-expanded {
+    padding: 15px;
+  }
 }
 </style>

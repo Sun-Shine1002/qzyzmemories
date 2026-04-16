@@ -91,6 +91,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 .dashboard {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -102,7 +112,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 60px;
+  padding: 20px 40px;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(15px);
 }
@@ -110,19 +120,19 @@ onMounted(async () => {
 .header h1 {
   color: white;
   margin: 0;
-  font-size: 36px;
-  letter-spacing: 8px;
+  font-size: 32px;
+  letter-spacing: 6px;
   font-weight: bold;
 }
 
 .user-mini {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   cursor: pointer;
   padding: 10px 20px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 30px;
+  border-radius: 25px;
   transition: all 0.3s;
 }
 
@@ -131,21 +141,21 @@ onMounted(async () => {
 }
 
 .user-avatar {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
 }
 
 .user-name {
   color: white;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .main-content {
@@ -154,22 +164,22 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px;
+  padding: 40px 20px;
 }
 
 .year-tabs {
   display: flex;
-  gap: 40px;
-  margin-bottom: 60px;
+  gap: 30px;
+  margin-bottom: 50px;
 }
 
 .year-tabs button {
-  padding: 20px 80px;
+  padding: 16px 60px;
   background: rgba(255, 255, 255, 0.1);
   color: white;
   border: 3px solid transparent;
   border-radius: 30px;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
@@ -183,34 +193,89 @@ onMounted(async () => {
 
 .modules-grid {
   display: flex;
-  gap: 60px;
+  gap: 50px;
 }
 
 .module-card {
-  width: 400px;
-  padding: 80px 60px;
+  width: 350px;
+  padding: 60px 50px;
   background: white;
-  border-radius: 30px;
+  border-radius: 24px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
 }
 
 .module-card:hover {
-  transform: translateY(-15px);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+  transform: translateY(-12px);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
 }
 
 .module-card h2 {
-  margin: 0 0 15px;
+  margin: 0 0 12px;
   color: #333;
-  font-size: 36px;
+  font-size: 32px;
 }
 
 .module-card p {
   margin: 0;
   color: #667eea;
-  font-size: 18px;
+  font-size: 16px;
+}
+
+/* 手机适配 */
+@media (max-width: 600px) {
+  .header {
+    padding: 15px 20px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    letter-spacing: 3px;
+  }
+
+  .user-mini {
+    padding: 8px 15px;
+    gap: 8px;
+  }
+
+  .user-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 15px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+
+  .main-content {
+    padding: 30px 15px;
+  }
+
+  .year-tabs {
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+
+  .year-tabs button {
+    padding: 14px 50px;
+    font-size: 18px;
+  }
+
+  .module-card {
+    width: 280px;
+    padding: 40px 30px;
+  }
+
+  .module-card h2 {
+    font-size: 26px;
+  }
+
+  .module-card p {
+    font-size: 14px;
+  }
 }
 </style>

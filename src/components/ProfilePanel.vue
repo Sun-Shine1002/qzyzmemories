@@ -1,47 +1,48 @@
 <template>
-  <div class="profile-panel" @click.stop>
-    <div class="panel-header">
-      <h3>个人信息</h3>
-      <button class="close-btn" @click="$emit('close')">×</button>
-    </div>
-
-    <div class="panel-content">
-      <div class="avatar-section">
-        <div class="avatar">{{ form.username?.charAt(0) || '?' }}</div>
-        <p class="user-email">{{ user?.email }}</p>
+  <div class="panel-overlay" @click.self="$emit('close')">
+    <div class="profile-panel">
+      <div class="panel-header">
+        <h3>个人信息</h3>
+        <button class="close-btn" @click="$emit('close')">×</button>
       </div>
 
-      <div class="form-section">
-        <div class="form-group">
-          <label>用户名</label>
-          <input v-model="form.username" type="text" placeholder="请输入用户名" />
+      <div class="panel-content">
+        <div class="avatar-section">
+          <div class="avatar">{{ form.username?.charAt(0) || '?' }}</div>
         </div>
 
-        <div class="form-group">
-          <label>班级</label>
-          <input v-model="form.class_name" type="text" placeholder="如：高三(1)班" />
+        <div class="form-section">
+          <div class="form-group">
+            <label>用户名</label>
+            <input v-model="form.username" type="text" placeholder="请输入用户名" />
+          </div>
+
+          <div class="form-group">
+            <label>班级</label>
+            <input v-model="form.class_name" type="text" placeholder="如：高三(1)班" />
+          </div>
+
+          <div class="form-group">
+            <label>个人简介</label>
+            <textarea v-model="form.bio" placeholder="介绍一下自己..." rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>头像URL</label>
+            <input v-model="form.avatar_url" type="text" placeholder="输入头像图片地址" />
+          </div>
         </div>
 
-        <div class="form-group">
-          <label>个人简介</label>
-          <textarea v-model="form.bio" placeholder="介绍一下自己..." rows="3"></textarea>
+        <div class="btn-group">
+          <button @click="handleSave" :disabled="saving" class="save-btn">
+            {{ saving ? '保存中...' : '保存' }}
+          </button>
+          <button @click="handleCancel" class="cancel-btn">取消</button>
         </div>
 
-        <div class="form-group">
-          <label>头像URL</label>
-          <input v-model="form.avatar_url" type="text" placeholder="输入头像图片地址" />
-        </div>
+        <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
+        <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
       </div>
-
-      <div class="btn-group">
-        <button @click="handleSave" :disabled="saving" class="save-btn">
-          {{ saving ? '保存中...' : '保存' }}
-        </button>
-        <button @click="handleCancel" class="cancel-btn">取消</button>
-      </div>
-
-      <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
-      <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
     </div>
   </div>
 </template>
@@ -130,15 +131,26 @@ const handleCancel = () => {
 </script>
 
 <style scoped>
-.profile-panel {
+.panel-overlay {
   position: fixed;
-  right: 0;
   top: 0;
-  width: 400px;
-  height: 100vh;
-  background: white;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1000;
+  padding: 20px;
+}
+
+.profile-panel {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  background: white;
+  border-radius: 20px;
   overflow-y: auto;
 }
 
@@ -148,11 +160,16 @@ const handleCancel = () => {
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: white;
+  border-radius: 20px 20px 0 0;
 }
 
 .panel-header h3 {
   margin: 0;
   color: #333;
+  font-size: 18px;
 }
 
 .close-btn {
@@ -163,9 +180,12 @@ const handleCancel = () => {
   font-size: 24px;
   color: #999;
   cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.3s;
 }
 
 .close-btn:hover {
+  background: #f5f5f5;
   color: #333;
 }
 
@@ -175,38 +195,33 @@ const handleCancel = () => {
 
 .avatar-section {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .avatar {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 40px;
+  font-size: 32px;
   font-weight: bold;
-  margin: 0 auto 15px;
-}
-
-.user-email {
-  color: #666;
-  margin: 0;
+  margin: 0 auto;
 }
 
 .form-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .form-group label {
@@ -218,10 +233,11 @@ const handleCancel = () => {
 .form-group input,
 .form-group textarea {
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
+  border: 2px solid #eee;
+  border-radius: 10px;
+  font-size: 15px;
   font-family: inherit;
+  transition: border-color 0.3s;
 }
 
 .form-group textarea {
@@ -236,52 +252,74 @@ const handleCancel = () => {
 
 .btn-group {
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-top: 25px;
 }
 
 .save-btn {
   flex: 1;
-  padding: 12px;
-  background: #667eea;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 15px;
   cursor: pointer;
 }
 
 .save-btn:disabled {
-  background: #ccc;
+  opacity: 0.6;
 }
 
 .cancel-btn {
-  padding: 12px 20px;
+  padding: 14px 24px;
   background: #f5f5f5;
   color: #666;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
   cursor: pointer;
 }
 
 .success-msg {
   margin-top: 15px;
-  padding: 10px;
+  padding: 12px;
   background: #efe;
   color: #3a3;
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: center;
   font-size: 14px;
 }
 
 .error-msg {
   margin-top: 15px;
-  padding: 10px;
+  padding: 12px;
   background: #fee;
   color: #c33;
-  border-radius: 8px;
+  border-radius: 10px;
   text-align: center;
   font-size: 14px;
+}
+
+/* 手机适配 */
+@media (max-width: 600px) {
+  .panel-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .profile-panel {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .panel-header {
+    padding: 15px 20px;
+  }
+
+  .panel-content {
+    padding: 15px 20px 30px;
+  }
 }
 </style>

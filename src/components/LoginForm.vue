@@ -2,35 +2,31 @@
   <div class="login-container">
     <div class="form-card">
       <h2>{{ isLogin ? '同学登录' : '同学注册' }}</h2>
-      
-      <!-- 邮箱输入框 -->
+
       <div class="input-group">
         <label>邮箱</label>
-        <input 
-          v-model="email" 
-          type="email" 
+        <input
+          v-model="email"
+          type="email"
           placeholder="请输入你的邮箱"
           @keyup.enter="handleSubmit"
         />
       </div>
 
-      <!-- 密码输入框 -->
       <div class="input-group">
         <label>密码</label>
-        <input 
-          v-model="password" 
-          type="password" 
+        <input
+          v-model="password"
+          type="password"
           placeholder="请输入密码（至少6位）"
           @keyup.enter="handleSubmit"
         />
       </div>
 
-      <!-- 操作按钮 -->
       <button class="submit-btn" @click="handleSubmit" :disabled="loading">
         {{ loading ? '处理中...' : (isLogin ? '登录' : '注册') }}
       </button>
 
-      <!-- 切换登录/注册 -->
       <p class="toggle-text">
         {{ isLogin ? '还没有账号？' : '已有账号？' }}
         <a href="#" @click.prevent="toggleMode">
@@ -38,10 +34,7 @@
         </a>
       </p>
 
-      <!-- 错误提示 -->
       <div v-if="error" class="error-msg">{{ error }}</div>
-      
-      <!-- 成功提示 -->
       <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
     </div>
   </div>
@@ -53,15 +46,14 @@ import { supabase } from '../lib/supabase'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-// 状态变量
+
 const email = ref('')
 const password = ref('')
-const isLogin = ref(true) // true=登录模式, false=注册模式
+const isLogin = ref(true)
 const loading = ref(false)
 const error = ref('')
 const successMsg = ref('')
 
-// 切换登录/注册模式
 const toggleMode = () => {
   isLogin.value = !isLogin.value
   error.value = ''
@@ -70,9 +62,7 @@ const toggleMode = () => {
   password.value = ''
 }
 
-// 处理提交
 const handleSubmit = async () => {
-  // 简单校验
   if (!email.value || !password.value) {
     error.value = '邮箱和密码都不能为空'
     return
@@ -88,7 +78,6 @@ const handleSubmit = async () => {
 
   try {
     if (isLogin.value) {
-      // ========== 登录逻辑 ==========
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
         email: email.value,
         password: password.value
@@ -104,7 +93,6 @@ const handleSubmit = async () => {
       }, 1000)
 
     } else {
-      // ========== 注册逻辑 ==========
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.value,
         password: password.value
@@ -112,11 +100,9 @@ const handleSubmit = async () => {
 
       if (signUpError) throw signUpError
 
-      // 检查是否需要验证邮箱
       if (data.user?.identities?.length === 0) {
         error.value = '该邮箱已被注册，请直接登录'
       } else if (data.user && !data.user.email_confirmed_at) {
-        // 邮箱验证开启的情况
         successMsg.value = '注册成功！请前往邮箱验证后登录'
         setTimeout(() => {
           isLogin.value = true
@@ -140,27 +126,39 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 .login-container {
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
 }
 
 .form-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   padding: 40px;
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
 h2 {
-  margin-bottom: 30px;
+  margin: 0 0 30px;
   text-align: center;
   color: #333;
+  font-size: 26px;
 }
 
 .input-group {
@@ -172,15 +170,15 @@ h2 {
   margin-bottom: 8px;
   color: #555;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .input-group input {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border: 2px solid #eee;
+  border-radius: 10px;
   font-size: 16px;
-  box-sizing: border-box;
   transition: border-color 0.3s;
 }
 
@@ -191,19 +189,20 @@ h2 {
 
 .submit-btn {
   width: 100%;
-  padding: 14px;
-  background: #667eea;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: opacity 0.3s;
+  margin-top: 10px;
 }
 
 .submit-btn:hover {
-  background: #5a67d8;
+  opacity: 0.9;
 }
 
 .submit-btn:disabled {
@@ -212,9 +211,10 @@ h2 {
 }
 
 .toggle-text {
-  margin-top: 20px;
+  margin-top: 25px;
   text-align: center;
   color: #666;
+  font-size: 14px;
 }
 
 .toggle-text a {
@@ -228,20 +228,48 @@ h2 {
 }
 
 .error-msg {
-  margin-top: 16px;
-  padding: 12px;
+  margin-top: 20px;
+  padding: 14px;
   background: #fee;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #c33;
   font-size: 14px;
+  text-align: center;
 }
 
 .success-msg {
-  margin-top: 16px;
-  padding: 12px;
+  margin-top: 20px;
+  padding: 14px;
   background: #efe;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #3a3;
   font-size: 14px;
+  text-align: center;
+}
+
+/* 手机适配 */
+@media (max-width: 600px) {
+  .form-card {
+    padding: 30px 25px;
+  }
+
+  h2 {
+    font-size: 22px;
+    margin-bottom: 25px;
+  }
+
+  .input-group {
+    margin-bottom: 18px;
+  }
+
+  .input-group input {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .submit-btn {
+    padding: 14px;
+    font-size: 15px;
+  }
 }
 </style>
