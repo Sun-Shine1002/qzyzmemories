@@ -48,8 +48,11 @@
               </button>
             </div>
             <div v-if="post.content" class="post-content">{{ post.content }}</div>
-            <div v-if="post.image_url" class="post-image">
+            <div v-if="post.image_url" class="post-image" @click="previewImage(post.image_url)">
               <img :src="post.image_url" :alt="post.content || '图片'" />
+              <div class="image-overlay">
+                <span>点击查看/下载</span>
+              </div>
             </div>
           </div>
         </div>
@@ -102,6 +105,17 @@
     >
       +
     </button>
+
+    <!-- 图片预览弹窗 -->
+    <div v-if="showPreview" class="preview-overlay" @click="showPreview = false">
+      <div class="preview-content" @click.stop>
+        <img :src="previewUrl" alt="预览" />
+        <div class="preview-actions">
+          <button @click="downloadImage" class="download-btn">下载图片</button>
+          <button @click="showPreview = false" class="close-preview-btn">关闭</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -146,6 +160,20 @@ const submitting = ref(false)
 const loadingPosts = ref(false)
 const postsError = ref('')
 const posts = ref([])
+const previewUrl = ref('')
+const showPreview = ref(false)
+
+const previewImage = (url) => {
+  previewUrl.value = url
+  showPreview.value = true
+}
+
+const downloadImage = () => {
+  const link = document.createElement('a')
+  link.href = previewUrl.value
+  link.download = previewUrl.value.split('/').pop() || 'image'
+  link.click()
+}
 
 const handleFabClick = () => {
   if (userGraduationYear.value && userGraduationYear.value !== year) {
@@ -500,11 +528,48 @@ onMounted(async () => {
   margin-bottom: 10px;
 }
 
+.post-image {
+  position: relative;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .post-image img {
   width: 100%;
   max-height: 400px;
   object-fit: cover;
-  border-radius: 12px;
+  transition: opacity 0.3s;
+}
+
+.post-image:hover img {
+  opacity: 0.8;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.post-image:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay span {
+  color: white;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  border-radius: 20px;
 }
 
 .comment-form-expanded {
@@ -651,6 +716,61 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.preview-content {
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.preview-content img {
+  max-width: 100%;
+  max-height: calc(100vh - 120px);
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.download-btn {
+  padding: 12px 30px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.close-preview-btn {
+  padding: 12px 30px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
 }
 
 /* 手机适配 */

@@ -80,7 +80,7 @@ const errorMsg = ref('')
 const uploadingAvatar = ref(false)
 const avatarInput = ref(null)
 
-const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
 const form = ref({
   username: '',
@@ -110,7 +110,7 @@ const updateCooldownRemaining = () => {
   if (diff <= 0) {
     cooldownRemaining.value = ''
     cooldownEndTime.value = null
-    localStorage.removeItem('yearChangeCooldown')
+    localStorage.removeItem('yearChangeCooldown7d')
     if (cooldownTimer) clearInterval(cooldownTimer)
     return
   }
@@ -186,8 +186,8 @@ const handleSave = async () => {
     if (yearChanged && !isInCooldown.value) {
       data.graduation_year = form.value.graduation_year
       data.year_changed_at = new Date().toISOString()
-      cooldownEndTime.value = new Date(Date.now() + THREE_MONTHS_MS).toISOString()
-      localStorage.setItem('yearChangeCooldown', cooldownEndTime.value)
+      cooldownEndTime.value = new Date(Date.now() + SEVEN_DAYS_MS).toISOString()
+      localStorage.setItem('yearChangeCooldown7d', cooldownEndTime.value)
       startCooldownTimer()
     } else if (yearChanged && isInCooldown.value) {
       // 年份不变，只保留原值
@@ -241,7 +241,7 @@ onMounted(() => {
     }
   }
 
-  const savedCooldown = localStorage.getItem('yearChangeCooldown')
+  const savedCooldown = localStorage.getItem('yearChangeCooldown7d')
   if (savedCooldown) {
     cooldownEndTime.value = savedCooldown
     if (isInCooldown.value) {
