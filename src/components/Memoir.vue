@@ -4,74 +4,67 @@
       <button class="back-btn" @click="router.push('/dashboard')">← 返回</button>
       <h1>{{ year }}回忆录</h1>
       <div class="user-mini">
-        <span>{{ user?.email }}</span>
+        <div class="user-avatar">{{ displayName }}</div>
       </div>
     </header>
 
     <main class="main-content">
-      <div class="tabs">
-        <button :class="{ active: activeTab === 'comments' }" @click="activeTab = 'comments'">
-          回忆墙
-        </button>
-        <button :class="{ active: activeTab === 'photos' }" @click="loadPhotos">
-          相册
+      <!-- 章节选择 -->
+      <div class="chapters-nav">
+        <button
+          v-for="chapter in chapters"
+          :key="chapter.id"
+          :class="{ active: activeChapter === chapter.id }"
+          @click="selectChapter(chapter.id)"
+        >
+          {{ chapter.title }}
         </button>
       </div>
 
-      <!-- 回忆墙 -->
-      <div v-if="activeTab === 'comments'" class="comments-section">
-        <div class="comment-form">
+      <!-- 发帖区域 -->
+      <div class="post-form">
+        <div class="post-user">
+          <div class="post-avatar">{{ displayName }}</div>
+        </div>
+        <div class="post-input-area">
           <textarea
-            v-model="newComment"
-            placeholder="写下你的回忆..."
+            v-model="newPost.content"
+            :placeholder="chapters[activeChapter - 1]?.placeholder"
             rows="3"
           ></textarea>
-          <button @click="submitComment" :disabled="submitting" class="submit-btn">
-            {{ submitting ? '发布中...' : '发布' }}
-          </button>
-        </div>
-
-        <div v-if="loadingComments" class="loading">加载中...</div>
-        <div v-else-if="commentsError" class="error-msg">{{ commentsError }}</div>
-        <div v-else-if="comments.length === 0" class="empty-msg">
-          <p>暂无回忆</p>
-          <p class="sub-text">成为第一个分享回忆的人吧！</p>
-        </div>
-        <div v-else class="comments-list">
-          <div v-for="comment in comments" :key="comment.id" class="comment-card">
-            <div class="comment-header">
-              <div class="comment-avatar">{{ comment.username?.charAt(0) || '?' }}</div>
-              <div class="comment-meta">
-                <span class="comment-author">{{ comment.username }}</span>
-                <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
-              </div>
-            </div>
-            <div class="comment-content">{{ comment.content }}</div>
+          <input
+            v-model="newPost.imageUrl"
+            type="text"
+            placeholder="图片地址（可选）"
+            class="image-input"
+          />
+          <div class="post-actions">
+            <button @click="submitPost" :disabled="submitting" class="submit-btn">
+              {{ submitting ? '发布中...' : '发布' }}
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- 相册 -->
-      <div v-if="activeTab === 'photos'" class="photos-section">
-        <div class="upload-form">
-          <input v-model="photoTitle" type="text" placeholder="图片标题" />
-          <input v-model="photoUrl" type="text" placeholder="图片地址" />
-          <button @click="uploadPhoto" :disabled="uploading" class="submit-btn">
-            {{ uploading ? '上传中...' : '上传' }}
-          </button>
-        </div>
-
-        <div v-if="loadingPhotos" class="loading">加载中...</div>
-        <div v-else-if="photosError" class="error-msg">{{ photosError }}</div>
-        <div v-else-if="photos.length === 0" class="empty-msg">
-          <p>暂无相册</p>
-          <p class="sub-text">分享你的照片吧！</p>
-        </div>
-        <div v-else class="photo-grid">
-          <div v-for="photo in photos" :key="photo.id" class="photo-item">
-            <img :src="photo.url" :alt="photo.title" />
-            <p>{{ photo.title }}</p>
-            <span class="photo-time">{{ formatTime(photo.created_at) }}</span>
+      <!-- 帖子列表 -->
+      <div v-if="loadingPosts" class="loading">加载中...</div>
+      <div v-else-if="postsError" class="error-msg">{{ postsError }}</div>
+      <div v-else-if="posts.length === 0" class="empty-msg">
+        <p>暂无回忆</p>
+        <p class="sub-text">成为第一个分享的人吧！</p>
+      </div>
+      <div v-else class="posts-list">
+        <div v-for="post in posts" :key="post.id" class="post-card">
+          <div class="post-header">
+            <div class="post-avatar">{{ post.displayName }}</div>
+            <div class="post-meta">
+              <span class="post-author">{{ post.displayName }}</span>
+              <span class="post-time">{{ formatTime(post.created_at) }}</span>
+            </div>
+          </div>
+          <div v-if="post.content" class="post-content">{{ post.content }}</div>
+          <div v-if="post.image_url" class="post-image">
+            <img :src="post.image_url" :alt="post.content || '图片'" />
           </div>
         </div>
       </div>
@@ -80,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
@@ -89,36 +82,61 @@ const router = useRouter()
 
 const year = route.params.year || '2025'
 const user = ref(null)
-const activeTab = ref('comments')
+const username = ref('')
+const activeChapter = ref(1)
 
-const newComment = ref('')
+const chapters = [
+  { id: 1, title: '第一章', placeholder: '你们现在在哪个城市？' },
+  { id: 2, title: '第二章', placeholder: '记忆中你印象最深刻的老师？' },
+  { id: 3, title: '第三章', placeholder: '高中发生过什么印象深刻的事？' },
+  { id: 4, title: '第四章', placeholder: '在一中的三年，你拍下的最喜欢的照片' },
+  { id: 5, title: '第五章', placeholder: '高中时想说但未能说出的一句话？' },
+  { id: 6, title: '第六章', placeholder: '如果能重回高中，你最想做什么？' },
+  { id: 7, title: '第七章', placeholder: '大家的大学生活怎么样？' },
+  { id: 8, title: '第八章', placeholder: '毕业后突然很想很想一中的时候？' },
+  { id: 9, title: '第九章', placeholder: '你最想念一中什么饭菜呢？' },
+  { id: 10, title: '第十章', placeholder: '一中生活中最让你忘不了的人？' },
+  { id: 11, title: '第十一章', placeholder: '分享几张你大学生活的照片' },
+  { id: 12, title: '第十二章', placeholder: '还有什么想说的？' }
+]
+
+const newPost = ref({
+  content: '',
+  imageUrl: ''
+})
+
 const submitting = ref(false)
-const loadingComments = ref(false)
-const commentsError = ref('')
-const comments = ref([])
+const loadingPosts = ref(false)
+const postsError = ref('')
+const posts = ref([])
 
-const photoTitle = ref('')
-const photoUrl = ref('')
-const uploading = ref(false)
-const loadingPhotos = ref(false)
-const photosError = ref('')
-const photos = ref([])
+// 隐藏用户名，只显示第一个字+星号
+const displayName = computed(() => {
+  if (!username.value) return '?'
+  return username.value.charAt(0) + '**'
+})
 
-const loadComments = async () => {
-  loadingComments.value = true
-  commentsError.value = ''
+const selectChapter = async (chapterId) => {
+  activeChapter.value = chapterId
+  await loadPosts()
+}
+
+const loadPosts = async () => {
+  loadingPosts.value = true
+  postsError.value = ''
 
   try {
-    const { data: commentsData, error } = await supabase
-      .from('comments')
+    const { data: postsData, error } = await supabase
+      .from('posts')
       .select('*')
       .eq('graduation_year', year)
+      .eq('chapter', activeChapter.value)
       .order('created_at', { ascending: false })
 
     if (error) throw error
 
     // 获取用户信息
-    const userIds = commentsData.map(c => c.user_id)
+    const userIds = [...new Set(postsData.map(p => p.user_id))]
     const { data: profilesData } = await supabase
       .from('user_profiles')
       .select('user_id, username')
@@ -127,91 +145,46 @@ const loadComments = async () => {
     const profileMap = {}
     profilesData?.forEach(p => { profileMap[p.user_id] = p.username })
 
-    comments.value = commentsData.map(c => ({
-      ...c,
-      username: profileMap[c.user_id] || '未知用户'
+    posts.value = postsData.map(p => ({
+      ...p,
+      displayName: profileMap[p.user_id]
+        ? profileMap[p.user_id].charAt(0) + '**'
+        : '匿名'
     }))
   } catch (err) {
-    commentsError.value = err.message || '加载失败'
+    postsError.value = err.message || '加载失败'
   } finally {
-    loadingComments.value = false
+    loadingPosts.value = false
   }
 }
 
-const submitComment = async () => {
-  if (!newComment.value.trim()) return
+const submitPost = async () => {
+  if (!newPost.value.content.trim() && !newPost.value.imageUrl.trim()) return
 
   submitting.value = true
 
   try {
     const { error } = await supabase
-      .from('comments')
+      .from('posts')
       .insert([
         {
           user_id: user.value.id,
           graduation_year: year,
-          content: newComment.value.trim()
+          chapter: activeChapter.value,
+          content: newPost.value.content.trim() || null,
+          image_url: newPost.value.imageUrl.trim() || null
         }
       ])
 
     if (error) throw error
 
-    newComment.value = ''
-    await loadComments()
+    newPost.value.content = ''
+    newPost.value.imageUrl = ''
+    await loadPosts()
   } catch (err) {
     alert(err.message || '发布失败')
   } finally {
     submitting.value = false
-  }
-}
-
-const loadPhotos = async () => {
-  activeTab.value = 'photos'
-  loadingPhotos.value = true
-  photosError.value = ''
-
-  try {
-    const { data, error } = await supabase
-      .from('photos')
-      .select('*')
-      .eq('graduation_year', year)
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-
-    photos.value = data || []
-  } catch (err) {
-    photosError.value = err.message || '加载失败'
-  } finally {
-    loadingPhotos.value = false
-  }
-}
-
-const uploadPhoto = async () => {
-  if (!photoTitle.value.trim() || !photoUrl.value.trim()) return
-
-  uploading.value = true
-
-  try {
-    const { error } = await supabase
-      .from('photos')
-      .insert([
-        {
-          graduation_year: year,
-          title: photoTitle.value.trim(),
-          url: photoUrl.value.trim()
-        }
-      ])
-
-    if (error) throw error
-
-    photoTitle.value = ''
-    photoUrl.value = ''
-    await loadPhotos()
-  } catch (err) {
-    alert(err.message || '上传失败')
-  } finally {
-    uploading.value = false
   }
 }
 
@@ -225,7 +198,20 @@ onMounted(async () => {
   const userData = localStorage.getItem('user')
   if (userData) {
     user.value = JSON.parse(userData)
-    await loadComments()
+    username.value = userData.email?.split('@')[0] || ''
+
+    // 获取完整用户名
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('username')
+      .eq('user_id', user.value.id)
+      .single()
+
+    if (data?.username) {
+      username.value = data.username
+    }
+
+    await loadPosts()
   } else {
     router.push('/')
   }
@@ -241,85 +227,104 @@ onMounted(async () => {
 .header {
   display: flex;
   align-items: center;
-  padding: 15px 30px;
+  padding: 12px 20px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
 }
 
 .back-btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  margin-right: 20px;
+  font-size: 14px;
 }
 
 .header h1 {
   flex: 1;
   color: white;
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   text-align: center;
 }
 
 .user-mini {
-  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar,
+.post-avatar {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667eea;
   font-size: 14px;
+  font-weight: bold;
 }
 
 .main-content {
-  padding: 30px;
-  max-width: 800px;
+  padding: 15px;
+  max-width: 700px;
   margin: 0 auto;
 }
 
-.tabs {
+.chapters-nav {
   display: flex;
-  gap: 15px;
-  margin-bottom: 25px;
-}
-
-.tabs button {
-  flex: 1;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 2px solid transparent;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+  background: white;
+  padding: 12px;
   border-radius: 12px;
-  font-size: 16px;
-  font-weight: bold;
+}
+
+.chapters-nav button {
+  padding: 8px 14px;
+  background: #f5f5f5;
+  color: #666;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 
-.tabs button.active {
+.chapters-nav button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.post-form {
+  display: flex;
+  gap: 12px;
   background: white;
-  color: #667eea;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
 }
 
-.comments-section,
-.photos-section {
-  background: white;
-  border-radius: 16px;
-  padding: 25px;
+.post-user {
+  flex-shrink: 0;
 }
 
-.comment-form,
-.upload-form {
+.post-input-area {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 25px;
-  padding-bottom: 25px;
-  border-bottom: 1px solid #eee;
+  gap: 10px;
 }
 
-.comment-form textarea,
-.upload-form input {
+.post-input-area textarea,
+.post-input-area .image-input {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 14px;
@@ -328,23 +333,27 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-.upload-form input {
-  resize: vertical;
+.image-input {
+  resize: vertical !important;
 }
 
-.comment-form textarea:focus,
-.upload-form input:focus {
+.post-input-area textarea:focus,
+.image-input:focus {
   outline: none;
   border-color: #667eea;
 }
 
+.post-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .submit-btn {
-  align-self: flex-end;
-  padding: 10px 24px;
+  padding: 8px 20px;
   background: #667eea;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
 }
@@ -355,92 +364,64 @@ onMounted(async () => {
 
 .loading, .error-msg, .empty-msg {
   text-align: center;
-  padding: 40px;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
   color: #666;
 }
 
 .sub-text {
-  font-size: 14px;
+  font-size: 13px;
   color: #999;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-.comments-list {
+.posts-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
-.comment-card {
+.post-card {
+  background: white;
   padding: 15px;
-  background: #f9f9f9;
   border-radius: 12px;
 }
 
-.comment-header {
+.post-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-.comment-avatar {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-}
-
-.comment-meta {
+.post-meta {
   display: flex;
   flex-direction: column;
 }
 
-.comment-author {
+.post-author {
   color: #333;
+  font-size: 14px;
   font-weight: 500;
 }
 
-.comment-time {
+.post-time {
   color: #999;
   font-size: 12px;
 }
 
-.comment-content {
+.post-content {
   color: #555;
   line-height: 1.6;
+  margin-bottom: 10px;
+  font-size: 14px;
 }
 
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.photo-item {
-  text-align: center;
-}
-
-.photo-item img {
+.post-image img {
   width: 100%;
-  height: 180px;
+  max-height: 300px;
   object-fit: cover;
-  border-radius: 12px;
-}
-
-.photo-item p {
-  margin: 10px 0 5px;
-  color: #333;
-  font-weight: 500;
-}
-
-.photo-time {
-  color: #999;
-  font-size: 12px;
+  border-radius: 8px;
 }
 </style>

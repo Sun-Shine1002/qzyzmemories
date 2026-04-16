@@ -8,13 +8,20 @@
     </header>
 
     <main class="main-content">
-      <div class="modules-grid">
-        <div class="module-card" @click="goToMemoir('2025')">
-          <h2>2025</h2>
-        </div>
+      <!-- 年份选择 -->
+      <div class="year-tabs">
+        <button :class="{ active: activeYear === '2025' }" @click="activeYear = '2025'">
+          2025
+        </button>
+        <button :class="{ active: activeYear === '2026' }" @click="activeYear = '2026'">
+          2026
+        </button>
+      </div>
 
-        <div class="module-card" @click="goToMemoir('2026')">
-          <h2>2026</h2>
+      <div class="modules-grid">
+        <div class="module-card" @click="goToMemoir(activeYear)">
+          <h2>进入{{ activeYear }}回忆录</h2>
+          <p>点击进入</p>
         </div>
       </div>
     </main>
@@ -41,6 +48,7 @@ const router = useRouter()
 const user = ref(null)
 const profile = ref(null)
 const showProfilePanel = ref(false)
+const activeYear = ref('2025')
 
 const loadProfile = async () => {
   if (!user.value) return
@@ -133,38 +141,64 @@ onMounted(async () => {
 .main-content {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 40px;
+}
+
+.year-tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.year-tabs button {
+  padding: 12px 40px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid transparent;
+  border-radius: 25px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.year-tabs button.active {
+  background: white;
+  color: #667eea;
 }
 
 .modules-grid {
   display: flex;
-  gap: 60px;
+  gap: 40px;
 }
 
 .module-card {
-  width: 200px;
-  height: 200px;
+  width: 280px;
+  padding: 40px;
   background: white;
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 20px;
+  text-align: center;
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .module-card:hover {
-  transform: translateY(-10px);
+  transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
 }
 
 .module-card h2 {
-  margin: 0;
+  margin: 0 0 10px;
   color: #333;
-  font-size: 36px;
-  font-weight: bold;
+  font-size: 24px;
+}
+
+.module-card p {
+  margin: 0;
+  color: #667eea;
+  font-size: 14px;
 }
 </style>
