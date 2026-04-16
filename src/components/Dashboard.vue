@@ -4,6 +4,7 @@
       <h1>一中游记</h1>
       <div class="user-mini" @click="showProfilePanel = true">
         <div class="user-avatar">{{ profile?.username?.charAt(0) || '?' }}</div>
+        <span class="user-name">{{ profile?.username || '未登录' }}</span>
       </div>
     </header>
 
@@ -11,16 +12,16 @@
       <!-- 年份选择 -->
       <div class="year-tabs">
         <button :class="{ active: activeYear === '2025' }" @click="activeYear = '2025'">
-          2025
+          2025届
         </button>
         <button :class="{ active: activeYear === '2026' }" @click="activeYear = '2026'">
-          2026
+          2026届
         </button>
       </div>
 
       <div class="modules-grid">
         <div class="module-card" @click="goToMemoir(activeYear)">
-          <h2>进入{{ activeYear }}回忆录</h2>
+          <h2>{{ activeYear }}回忆录</h2>
           <p>点击进入</p>
         </div>
       </div>
@@ -99,43 +100,52 @@ onMounted(async () => {
 
 .header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  padding: 20px 30px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  position: relative;
+  padding: 20px 60px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
 }
 
 .header h1 {
   color: white;
   margin: 0;
-  font-size: 28px;
-  letter-spacing: 4px;
+  font-size: 36px;
+  letter-spacing: 8px;
+  font-weight: bold;
 }
 
 .user-mini {
-  position: absolute;
-  right: 30px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
   cursor: pointer;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  transition: all 0.3s;
+}
+
+.user-mini:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.9);
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #667eea;
-  font-size: 18px;
+  color: white;
+  font-size: 20px;
   font-weight: bold;
-  transition: transform 0.3s;
 }
 
-.user-mini:hover .user-avatar {
-  transform: scale(1.1);
+.user-name {
+  color: white;
+  font-size: 16px;
 }
 
 .main-content {
@@ -143,22 +153,23 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px;
+  justify-content: center;
+  padding: 60px;
 }
 
 .year-tabs {
   display: flex;
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 40px;
+  margin-bottom: 60px;
 }
 
 .year-tabs button {
-  padding: 12px 40px;
+  padding: 20px 80px;
   background: rgba(255, 255, 255, 0.1);
   color: white;
-  border: 2px solid transparent;
-  border-radius: 25px;
-  font-size: 18px;
+  border: 3px solid transparent;
+  border-radius: 30px;
+  font-size: 24px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
@@ -167,38 +178,39 @@ onMounted(async () => {
 .year-tabs button.active {
   background: white;
   color: #667eea;
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .modules-grid {
   display: flex;
-  gap: 40px;
+  gap: 60px;
 }
 
 .module-card {
-  width: 280px;
-  padding: 40px;
+  width: 400px;
+  padding: 80px 60px;
   background: white;
-  border-radius: 20px;
+  border-radius: 30px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
 .module-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  transform: translateY(-15px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
 }
 
 .module-card h2 {
-  margin: 0 0 10px;
+  margin: 0 0 15px;
   color: #333;
-  font-size: 24px;
+  font-size: 36px;
 }
 
 .module-card p {
   margin: 0;
   color: #667eea;
-  font-size: 14px;
+  font-size: 18px;
 }
 </style>

@@ -5,6 +5,7 @@
       <h1>{{ year }}回忆录</h1>
       <div class="user-mini">
         <div class="user-avatar">{{ displayName }}</div>
+        <span class="user-name">{{ username?.charAt(0) || '?' }}**</span>
       </div>
     </header>
 
@@ -30,7 +31,7 @@
           <textarea
             v-model="newPost.content"
             :placeholder="chapters[activeChapter - 1]?.placeholder"
-            rows="3"
+            rows="4"
           ></textarea>
           <input
             v-model="newPost.imageUrl"
@@ -110,7 +111,6 @@ const loadingPosts = ref(false)
 const postsError = ref('')
 const posts = ref([])
 
-// 隐藏用户名，只显示第一个字+星号
 const displayName = computed(() => {
   if (!username.value) return '?'
   return username.value.charAt(0) + '**'
@@ -135,7 +135,6 @@ const loadPosts = async () => {
 
     if (error) throw error
 
-    // 获取用户信息
     const userIds = [...new Set(postsData.map(p => p.user_id))]
     const { data: profilesData } = await supabase
       .from('user_profiles')
@@ -200,7 +199,6 @@ onMounted(async () => {
     user.value = JSON.parse(userData)
     username.value = userData.email?.split('@')[0] || ''
 
-    // 获取完整用户名
     const { data } = await supabase
       .from('user_profiles')
       .select('username')
@@ -222,78 +220,94 @@ onMounted(async () => {
 .memoir-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  padding: 20px 60px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
 }
 
 .back-btn {
-  padding: 6px 12px;
+  padding: 12px 24px;
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .header h1 {
-  flex: 1;
   color: white;
   margin: 0;
-  font-size: 20px;
-  text-align: center;
+  font-size: 28px;
+  letter-spacing: 4px;
 }
 
 .user-mini {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
 .user-avatar,
 .post-avatar {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.9);
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #667eea;
-  font-size: 14px;
+  color: white;
+  font-size: 18px;
   font-weight: bold;
 }
 
+.user-name {
+  color: white;
+  font-size: 16px;
+}
+
 .main-content {
-  padding: 15px;
-  max-width: 700px;
+  flex: 1;
+  padding: 40px 80px;
+  max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .chapters-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 15px;
-  background: white;
-  padding: 12px;
-  border-radius: 12px;
+  gap: 12px;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 20px;
 }
 
 .chapters-nav button {
-  padding: 8px 14px;
-  background: #f5f5f5;
-  color: #666;
+  padding: 14px 24px;
+  background: #f0f0f0;
+  color: #555;
   border: none;
-  border-radius: 20px;
-  font-size: 13px;
+  border-radius: 25px;
+  font-size: 15px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
 }
 
 .chapters-nav button.active {
@@ -303,11 +317,11 @@ onMounted(async () => {
 
 .post-form {
   display: flex;
-  gap: 12px;
+  gap: 20px;
   background: white;
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 15px;
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 30px;
 }
 
 .post-user {
@@ -318,23 +332,20 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
 }
 
 .post-input-area textarea,
-.post-input-area .image-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: none;
-  box-sizing: border-box;
-}
-
 .image-input {
-  resize: vertical !important;
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
 }
 
 .post-input-area textarea:focus,
@@ -349,50 +360,52 @@ onMounted(async () => {
 }
 
 .submit-btn {
-  padding: 8px 20px;
-  background: #667eea;
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 12px;
+  font-size: 16px;
   cursor: pointer;
+  transition: opacity 0.3s;
 }
 
 .submit-btn:disabled {
-  background: #ccc;
+  opacity: 0.6;
 }
 
 .loading, .error-msg, .empty-msg {
   text-align: center;
-  padding: 30px;
+  padding: 60px;
   background: white;
-  border-radius: 12px;
+  border-radius: 20px;
   color: #666;
+  font-size: 18px;
 }
 
 .sub-text {
-  font-size: 13px;
+  font-size: 15px;
   color: #999;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .posts-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
 }
 
 .post-card {
   background: white;
-  padding: 15px;
-  border-radius: 12px;
+  padding: 25px;
+  border-radius: 20px;
 }
 
 .post-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .post-meta {
@@ -402,26 +415,26 @@ onMounted(async () => {
 
 .post-author {
   color: #333;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
 }
 
 .post-time {
   color: #999;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .post-content {
-  color: #555;
-  line-height: 1.6;
-  margin-bottom: 10px;
-  font-size: 14px;
+  color: #444;
+  line-height: 1.8;
+  margin-bottom: 15px;
+  font-size: 16px;
 }
 
 .post-image img {
   width: 100%;
-  max-height: 300px;
+  max-height: 500px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 </style>
