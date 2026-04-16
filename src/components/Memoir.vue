@@ -39,6 +39,13 @@
             <div class="post-meta">
               <span class="post-author">{{ post.displayName }}</span>
               <span class="post-time">{{ formatTime(post.created_at) }}</span>
+              <button
+                v-if="post.user_id === user?.id"
+                @click="handleDelete(post.id)"
+                class="delete-btn"
+              >
+                删除
+              </button>
             </div>
             <div v-if="post.content" class="post-content">{{ post.content }}</div>
             <div v-if="post.image_url" class="post-image">
@@ -141,7 +148,6 @@ const postsError = ref('')
 const posts = ref([])
 
 const handleFabClick = () => {
-  // 检查用户毕业年份是否匹配
   if (userGraduationYear.value && userGraduationYear.value !== year) {
     alert(`你选择了 ${userGraduationYear.value}届，只能在 ${userGraduationYear.value}回忆录中评论`)
     return
@@ -231,8 +237,25 @@ const loadPosts = async () => {
   }
 }
 
+const handleDelete = async (postId) => {
+  if (!confirm('确定要删除这条回忆吗？')) return
+
+  try {
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId)
+      .eq('user_id', user.value.id)
+
+    if (error) throw error
+
+    await loadPosts()
+  } catch (err) {
+    alert('删除失败：' + (err.message || '请稍后重试'))
+  }
+}
+
 const submitPost = async () => {
-  // 检查用户毕业年份
   if (userGraduationYear.value && userGraduationYear.value !== year) {
     alert(`你选择了 ${userGraduationYear.value}届，只能在 ${userGraduationYear.value}回忆录中评论`)
     return
@@ -445,6 +468,7 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .post-author {
@@ -456,6 +480,17 @@ onMounted(async () => {
 .post-time {
   color: #999;
   font-size: 12px;
+  flex: 1;
+}
+
+.delete-btn {
+  padding: 4px 12px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 .post-content {
