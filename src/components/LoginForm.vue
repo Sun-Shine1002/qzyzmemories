@@ -34,6 +34,8 @@
         </a>
       </p>
 
+      <button class="back-btn" @click="goBack">返回浏览</button>
+
       <div v-if="error" class="error-msg">{{ error }}</div>
       <div v-if="successMsg" class="success-msg">{{ successMsg }}</div>
     </div>
@@ -41,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'vue-router'
 
@@ -54,12 +56,24 @@ const loading = ref(false)
 const error = ref('')
 const successMsg = ref('')
 
+onMounted(() => {
+  // 如果已登录，直接跳转
+  const userData = localStorage.getItem('user')
+  if (userData) {
+    router.push('/dashboard')
+  }
+})
+
 const toggleMode = () => {
   isLogin.value = !isLogin.value
   error.value = ''
   successMsg.value = ''
   email.value = ''
   password.value = ''
+}
+
+const goBack = () => {
+  router.push('/dashboard')
 }
 
 const handleSubmit = async () => {
@@ -231,6 +245,23 @@ h2 {
 
 .toggle-text a:hover {
   text-decoration: underline;
+}
+
+.back-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 20px;
+  background: transparent;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.back-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
 }
 
 .error-msg {

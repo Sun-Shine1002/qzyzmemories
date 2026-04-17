@@ -2,10 +2,11 @@
   <div class="dashboard">
     <header class="header">
       <h1>一中游记</h1>
-      <div class="user-mini" @click="showProfilePanel = true">
+      <div v-if="user" class="user-mini" @click="showProfilePanel = true">
         <div class="user-avatar">{{ profile?.username?.charAt(0) || '?' }}</div>
         <span class="user-name">{{ profile?.username || '未登录' }}</span>
       </div>
+      <button v-else class="login-btn" @click="goToLogin">登录</button>
     </header>
 
     <main class="main-content">
@@ -25,11 +26,14 @@
           <p>点击进入</p>
         </div>
       </div>
+
+      <!-- 提示信息 -->
+      <p class="browse-hint">未登录用户可以浏览回忆录，登录后可参与评论</p>
     </main>
 
     <!-- 用户信息编辑面板 -->
     <ProfilePanel
-      v-if="showProfilePanel"
+      v-if="showProfilePanel && user"
       :user="user"
       :profile="profile"
       @close="showProfilePanel = false"
@@ -50,6 +54,10 @@ const user = ref(null)
 const profile = ref(null)
 const showProfilePanel = ref(false)
 const activeYear = ref('2025')
+
+const goToLogin = () => {
+  router.push('/')
+}
 
 const loadProfile = async () => {
   if (!user.value) return
@@ -84,8 +92,6 @@ onMounted(async () => {
   if (userData) {
     user.value = JSON.parse(userData)
     await loadProfile()
-  } else {
-    router.push('/')
   }
 })
 </script>
@@ -224,6 +230,28 @@ html, body {
   font-size: 16px;
 }
 
+.login-btn {
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.login-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.browse-hint {
+  margin-top: 30px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
 /* 手机适配 */
 @media (max-width: 600px) {
   .header {
@@ -247,6 +275,11 @@ html, body {
   }
 
   .user-name {
+    font-size: 13px;
+  }
+
+  .login-btn {
+    padding: 8px 18px;
     font-size: 13px;
   }
 
@@ -276,6 +309,12 @@ html, body {
 
   .module-card p {
     font-size: 14px;
+  }
+
+  .browse-hint {
+    font-size: 13px;
+    padding: 0 20px;
+    text-align: center;
   }
 }
 </style>

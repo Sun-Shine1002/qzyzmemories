@@ -95,6 +95,12 @@
           <button @click="showCommentForm = false" class="cancel-btn">收起</button>
         </div>
       </div>
+
+      <!-- 未登录提示 -->
+      <div v-if="!user && !showCommentForm" class="login-prompt">
+        <p>登录后可参与评论</p>
+        <button @click="goToLogin" class="login-prompt-btn">前往登录</button>
+      </div>
     </main>
 
     <!-- 悬浮添加按钮 -->
@@ -133,6 +139,7 @@ const activeChapter = ref(1)
 const showCommentForm = ref(false)
 const fileInput = ref(null)
 const uploadingImage = ref(false)
+const showLoginPrompt = ref(false)
 
 const chapters = [
   { id: 1, title: '第一章', placeholder: '你们现在在哪个城市？' },
@@ -167,11 +174,19 @@ const previewImage = (url) => {
 }
 
 const handleFabClick = () => {
+  if (!user.value) {
+    showLoginPrompt.value = true
+    return
+  }
   if (userGraduationYear.value && userGraduationYear.value !== year) {
     alert(`你选择了 ${userGraduationYear.value}届，只能在 ${userGraduationYear.value}回忆录中评论`)
     return
   }
   showCommentForm.value = true
+}
+
+const goToLogin = () => {
+  router.push('/')
 }
 
 const triggerFileInput = () => {
@@ -324,7 +339,6 @@ onMounted(async () => {
   const userData = localStorage.getItem('user')
   if (userData) {
     user.value = JSON.parse(userData)
-    username.value = userData.email?.split('@')[0] || ''
 
     const { data } = await supabase
       .from('user_profiles')
@@ -338,11 +352,10 @@ onMounted(async () => {
     if (data?.graduation_year) {
       userGraduationYear.value = data.graduation_year
     }
-
-    await loadPosts()
-  } else {
-    router.push('/')
   }
+
+  // 无论是否登录都加载帖子，允许浏览
+  await loadPosts()
 })
 </script>
 
@@ -707,6 +720,30 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.login-prompt {
+  background: white;
+  border-radius: 16px;
+  padding: 30px 20px;
+  text-align: center;
+  margin-top: 15px;
+}
+
+.login-prompt p {
+  margin: 0 0 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.login-prompt-btn {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .preview-overlay {
