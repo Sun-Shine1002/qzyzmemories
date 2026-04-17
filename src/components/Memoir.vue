@@ -111,12 +111,7 @@
       <div class="preview-content" @click.stop>
         <button class="close-preview" @click="showPreview = false">×</button>
         <img :src="previewUrl" alt="预览" />
-        <div class="preview-actions">
-          <a :href="previewUrl" target="_blank" rel="noopener noreferrer" class="download-btn">
-            保存图片
-          </a>
-          <button @click="showPreview = false" class="close-preview-btn">关闭</button>
-        </div>
+        <div class="save-hint">长按图片可保存</div>
       </div>
     </div>
   </div>
@@ -760,33 +755,17 @@ onMounted(async () => {
   z-index: 10;
 }
 
-.preview-actions {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.download-btn {
-  padding: 12px 30px;
-  background: #667eea;
+.save-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.close-preview-btn {
-  padding: 12px 30px;
-  background: #444;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  cursor: pointer;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 20px;
+  border-radius: 20px;
+  pointer-events: none;
 }
 
 /* 手机适配 */
