@@ -109,9 +109,12 @@
     <!-- 图片预览弹窗 -->
     <div v-if="showPreview" class="preview-overlay" @click="showPreview = false">
       <div class="preview-content" @click.stop>
+        <button class="close-preview" @click="showPreview = false">×</button>
         <img :src="previewUrl" alt="预览" />
         <div class="preview-actions">
-          <button @click.stop="downloadImage" class="download-btn">在新窗口打开</button>
+          <a :href="previewUrl" target="_blank" rel="noopener noreferrer" class="download-btn">
+            保存图片
+          </a>
           <button @click="showPreview = false" class="close-preview-btn">关闭</button>
         </div>
       </div>
@@ -168,10 +171,6 @@ const previewImage = (url) => {
   showPreview.value = true
 }
 
-const downloadImage = () => {
-  window.open(previewUrl.value, '_blank')
-}
-
 const handleFabClick = () => {
   if (userGraduationYear.value && userGraduationYear.value !== year) {
     alert(`你选择了 ${userGraduationYear.value}届，只能在 ${userGraduationYear.value}回忆录中评论`)
@@ -205,7 +204,6 @@ const handleFileSelect = async (event) => {
     if (uploadError) throw uploadError
 
     const { data } = supabase.storage.from('photos').getPublicUrl(filePath)
-    console.log('图片URL:', data.publicUrl)
     newPost.value.imageUrl = data.publicUrl
   } catch (err) {
     alert('上传失败：' + (err.message || '请检查网络或重新尝试'))
@@ -722,7 +720,7 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -731,24 +729,42 @@ onMounted(async () => {
 }
 
 .preview-content {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
 }
 
 .preview-content img {
   max-width: 100%;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 150px);
   object-fit: contain;
   border-radius: 12px;
+}
+
+.close-preview {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 36px;
+  height: 36px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 36px;
+  z-index: 10;
 }
 
 .preview-actions {
   display: flex;
   gap: 15px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .download-btn {
@@ -759,6 +775,8 @@ onMounted(async () => {
   border-radius: 10px;
   font-size: 15px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .close-preview-btn {
