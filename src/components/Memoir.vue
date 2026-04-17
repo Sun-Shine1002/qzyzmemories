@@ -205,6 +205,7 @@ const handleFileSelect = async (event) => {
     if (uploadError) throw uploadError
 
     const { data } = supabase.storage.from('photos').getPublicUrl(filePath)
+    console.log('图片URL:', data.publicUrl)
     newPost.value.imageUrl = data.publicUrl
   } catch (err) {
     alert('上传失败：' + (err.message || '请检查网络或重新尝试'))
