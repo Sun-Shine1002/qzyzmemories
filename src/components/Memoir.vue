@@ -111,7 +111,7 @@
       <div class="preview-content" @click.stop>
         <img :src="previewUrl" alt="预览" />
         <div class="preview-actions">
-          <button @click.stop="downloadImage" class="download-btn">下载图片</button>
+          <button @click.stop="downloadImage" class="download-btn">在新窗口打开</button>
           <button @click="showPreview = false" class="close-preview-btn">关闭</button>
         </div>
       </div>
@@ -169,14 +169,7 @@ const previewImage = (url) => {
 }
 
 const downloadImage = () => {
-  const link = document.createElement('a')
-  link.href = previewUrl.value
-  link.download = previewUrl.value.split('/').pop() || 'image'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  showPreview.value = false
-  alert('下载成功！')
+  window.open(previewUrl.value, '_blank')
 }
 
 const handleFabClick = () => {
