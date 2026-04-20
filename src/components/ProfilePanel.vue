@@ -28,11 +28,6 @@
         </div>
 
         <div class="form-group">
-          <label>班级</label>
-          <input v-model="form.class_name" type="text" placeholder="如：高三(1)班" />
-        </div>
-
-        <div class="form-group">
           <label>毕业年份</label>
           <select v-model="form.graduation_year">
             <option value="2025">2025届</option>
@@ -84,7 +79,6 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
 const form = ref({
   username: '',
-  class_name: '',
   graduation_year: '2025',
   avatar_url: ''
 })
@@ -177,7 +171,6 @@ const handleSave = async () => {
     const data = {
       user_id: props.user.id,
       username: form.value.username,
-      class_name: form.value.class_name,
       avatar_url: form.value.avatar_url,
       updated_at: new Date().toISOString()
     }
@@ -235,7 +228,6 @@ onMounted(() => {
   if (props.profile) {
     form.value = {
       username: props.profile.username || '',
-      class_name: props.profile.class_name || '',
       graduation_year: props.profile.graduation_year || '2025',
       avatar_url: props.profile.avatar_url || ''
     }

@@ -2,9 +2,15 @@
   <div class="dashboard">
     <header class="header">
       <h1>一中游记</h1>
-      <div v-if="user" class="user-mini" @click="showProfilePanel = true">
-        <div class="user-avatar">{{ profile?.username?.charAt(0) || '?' }}</div>
-        <span class="user-name">{{ profile?.username || '未登录' }}</span>
+      <div v-if="user" class="user-section">
+        <div class="user-info">
+          <div class="user-avatar">{{ profile?.username?.charAt(0) || '?' }}</div>
+          <span class="user-name">{{ profile?.username || '未登录' }}</span>
+        </div>
+        <div class="user-actions">
+          <button class="action-btn" @click="showProfilePanel = true">修改信息</button>
+          <button class="action-btn logout-btn" @click="handleLogout">退出登录</button>
+        </div>
       </div>
       <button v-else class="login-btn" @click="goToLogin">登录</button>
     </header>
@@ -87,6 +93,19 @@ const handleProfileUpdate = (data) => {
   profile.value = { ...profile.value, ...data }
 }
 
+const handleLogout = async () => {
+  if (!confirm('确定要退出登录吗？')) return
+
+  localStorage.removeItem('user')
+  const { error } = await supabase.auth.signOut()
+  if (error) {
+    console.error('退出登录失败:', error)
+  }
+  user.value = null
+  profile.value = null
+  router.push('/')
+}
+
 onMounted(async () => {
   const userData = localStorage.getItem('user')
   if (userData) {
@@ -131,19 +150,46 @@ html, body {
   font-weight: bold;
 }
 
-.user-mini {
+.user-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.user-info {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 15px;
+  font-size: 12px;
   cursor: pointer;
-  padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 25px;
   transition: all 0.3s;
 }
 
-.user-mini:hover {
-  background: rgba(255, 255, 255, 0.2);
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.logout-btn {
+  background: rgba(255, 100, 100, 0.3);
+  border-color: rgba(255, 100, 100, 0.4);
+}
+
+.logout-btn:hover {
+  background: rgba(255, 100, 100, 0.5);
 }
 
 .user-avatar {
@@ -256,6 +302,7 @@ html, body {
 @media (max-width: 600px) {
   .header {
     padding: 15px 20px;
+    flex-wrap: wrap;
   }
 
   .header h1 {
@@ -263,8 +310,15 @@ html, body {
     letter-spacing: 3px;
   }
 
-  .user-mini {
-    padding: 8px 15px;
+  .user-section {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .user-info {
     gap: 8px;
   }
 
@@ -276,6 +330,15 @@ html, body {
 
   .user-name {
     font-size: 13px;
+  }
+
+  .user-actions {
+    gap: 6px;
+  }
+
+  .action-btn {
+    padding: 5px 12px;
+    font-size: 11px;
   }
 
   .login-btn {
